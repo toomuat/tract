@@ -32,6 +32,19 @@ impl From<char> for Symbol {
     }
 }
 
+#[derive(Debug)]
+pub struct UnresolvedSymbolError(pub TDim);
+
+impl std::fmt::Display for UnresolvedSymbolError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Unresolved symbols in {:?}", self.0)
+    }
+}
+
+impl std::error::Error for UnresolvedSymbolError {
+}
+
+
 #[derive(Clone, Debug, Default)]
 pub struct SymbolValues(Vec<Option<i64>>);
 
@@ -94,7 +107,7 @@ impl TDim {
         if let Val(v) = self {
             Ok(*v)
         } else {
-            anyhow::bail!("Not a determined integer: {}", self)
+            Err(UnresolvedSymbolError(self.clone()).into())
         }
     }
 

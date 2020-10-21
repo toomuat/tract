@@ -1,13 +1,13 @@
 //! Extended dimension support
+use num_traits::Zero;
 use std::fmt;
 use std::ops;
-use num_traits::Zero;
 
 mod tree;
 
-pub use self::tree::{Symbol, SymbolValues, TDim};
 type TractError = anyhow::Error;
 type TractResult<T> = anyhow::Result<T>;
+pub use self::tree::{Symbol, SymbolValues, TDim, UnresolvedSymbolError};
 
 /// A super-trait for value acting as tensor dimensions in tract.
 ///

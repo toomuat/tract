@@ -29,9 +29,6 @@ impl DataFormat {
         D: DimLike,
         S: AsRef<[D]> + fmt::Debug,
     {
-        if shape.as_ref().iter().filter(|d| d.to_i64().is_err()).count() > 1 {
-            panic!("Can not work out a data format with two actual symbolic dim")
-        }
         let mut strides: Vec<D> = vec![D::one()];
         for dim in shape.as_ref().iter().skip(1).rev() {
             let previous = strides.last().unwrap().clone();

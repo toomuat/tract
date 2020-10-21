@@ -50,10 +50,11 @@ pub trait InferenceOp:
                             values.into_iter().map(|t| t.into()).collect::<TVec<_>>();
                         return Ok((infered_inputs, output_values, observed));
                     }
-                    Err(e) => match e {
-                        //            TractError(TractErrorKind::StreamTensor, _) => (),
-                        e => return Err(e).context("Eager eval"),
-                    },
+                    Err(e) => {
+                        if !e.is::<tract_core::dim::UnresolvedSymbolError>() {
+                            return Err(e).context("Eager eval");
+                        }
+                    }
                 }
             }
         }
