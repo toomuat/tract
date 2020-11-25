@@ -418,8 +418,24 @@ armv7neon_mmm_f32_8x4:
     b       .unsupported
 
 .store_strides:
-
     // r5,r6,r7 are c,src,csc
+
+    cmp     r6, #4
+    bne .store_strides_generic
+
+    {% for col in (0..3) %}
+        mov r8, r5
+        vst1.32 { q{{col | times: 2 | plus: 8 }} }, [ r8 ]!
+        vst1.32 { q{{col | times: 2 | plus: 9 }} }, [ r8 ]!
+        {% if col < 3 %}
+            add r5, r5, r7
+        {% endif %}
+    {% endfor %}
+
+    mov         r0,     #0
+    b           .return
+
+.store_strides_generic:
     {% for col in (0..3) %}
         mov         r8, r5
         {% for reg in (0..3) %}
