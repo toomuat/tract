@@ -559,6 +559,22 @@
     ldr         x6, [x3, #16]               // rsc
     ldr         x7, [x3, #24]               // csc
 
+    cmp         x6, #4
+    bne         .store_strides_generic
+
+    // cols are inner
+    {% for col in (8..15) %}
+        mov         x4, x5
+        st1         { v{{col | times: 2}}.4s }, [ x4 ], #16
+        st1         { v{{col | times: 2 | plus: 1}}.4s }, [ x4 ]
+        add         x5, x5, x7
+    {% endfor %}
+
+    mov         x0, #0
+    b           .return
+
+.store_strides_generic:
+
     {% for col in (8..15) %}
         mov x4, x5
         {% for reg in (0..1) %}
