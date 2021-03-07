@@ -33,6 +33,7 @@ pub mod ops {
     pub mod matmul;
     pub mod nn;
     pub use tract_core::ops::quant;
+    pub mod resize;
     pub mod scan;
     pub mod source;
     pub mod unimpl;
