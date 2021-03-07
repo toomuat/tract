@@ -32,6 +32,7 @@ pub fn register_all_ops(reg: &mut TfOpRegister) {
     random::register_all_ops(reg);
     rec::register_all_ops(reg);
     vars::register_all_ops(reg);
+    reg.insert("Assert", |_, _| Ok(Box::new(Noop)));
     reg.insert("Cast", cast);
     reg.insert("Const", konst);
     reg.insert("Identity", |_, _| Ok(Box::new(tract_hir::ops::identity::Identity)));
