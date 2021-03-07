@@ -4,8 +4,7 @@ use tract_hir::internal::*;
 use tract_hir::ops::nn;
 
 pub fn argmax(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    dbg!(pb);
-    todo!();
+    Ok(expand(ArgMax))
 }
 
 #[derive(Clone, Debug, Hash, PartialEq)]
@@ -41,7 +40,7 @@ impl Expansion for ArgMax {
         outputs: &'p [TensorProxy],
     ) -> InferenceResult {
         check_input_arity(&inputs, 2)?;
-        check_output_arity(&inputs, 1)?;
+        check_output_arity(&outputs, 1)?;
         s.equals(&outputs[0].datum_type, i64::datum_type())?;
         s.equals(&outputs[0].rank, inputs[0].rank.bex() - 1)?;
         s.given_2(&inputs[0].rank, &inputs[1].value, move |s, rank, dim| {

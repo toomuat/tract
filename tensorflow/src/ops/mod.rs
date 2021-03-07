@@ -20,6 +20,7 @@ pub mod nn;
 pub mod quant;
 pub mod random;
 pub mod rec;
+pub mod resize;
 pub mod vars;
 
 pub fn register_all_ops(reg: &mut TfOpRegister) {
@@ -31,6 +32,7 @@ pub fn register_all_ops(reg: &mut TfOpRegister) {
     quant::register_all_ops(reg);
     random::register_all_ops(reg);
     rec::register_all_ops(reg);
+    resize::register_all_ops(reg);
     vars::register_all_ops(reg);
     reg.insert("Assert", |_, _| Ok(Box::new(Noop)));
     reg.insert("Cast", cast);
