@@ -4,17 +4,12 @@ use crate::model::ParsingContext;
 use crate::tfpb::tensorflow::NodeDef;
 
 pub fn pack(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    let dtype = pb.get_attr_datum_type("T")?;
-    let n = pb.input.len();
     let axis = pb.get_attr_int("axis")?;
-
-    Ok(expand(Pack::new(dtype, n, axis)))
+    Ok(expand(Pack::new(axis)))
 }
 
 #[derive(Debug, Clone, new, Hash)]
 pub struct Pack {
-    t: DatumType,
-    n: usize, // The number of inputs
     axis: usize,
 }
 
@@ -34,11 +29,11 @@ impl Expansion for Pack {
         outputs: &'p [TensorProxy],
     ) -> InferenceResult {
         let axis = self.axis;
-        check_input_arity(&inputs, self.n)?;
+        let n = inputs.len();
         check_output_arity(&outputs, 1)?;
         s.equals(&outputs[0].rank, inputs[0].rank.bex() + 1)?;
-        s.equals_all((0..self.n).map(|i| inputs[i].rank.bex()).collect())?;
-        s.given_all((0..self.n).map(move |i| &inputs[i].datum_type), move |s, dts| {
+        s.equals_all((0..n).map(|i| inputs[i].rank.bex()).collect())?;
+        s.given_all((0..n).map(move |i| &inputs[i].datum_type), move |s, dts| {
             if let Some(dt) = DatumType::super_type_for(dts) {
                 s.equals(&outputs[0].datum_type, dt)?;
             }
@@ -46,7 +41,7 @@ impl Expansion for Pack {
         })?;
         s.given(&inputs[0].rank, move |s, r| {
             for d in 0..r as usize {
-                s.equals_all((0..self.n).map(|i| inputs[i].shape[d].bex()).collect())?;
+                s.equals_all((0..n).map(|i| inputs[i].shape[d].bex()).collect())?;
             }
             Ok(())
         })?;
@@ -61,7 +56,7 @@ impl Expansion for Pack {
             }
             Ok(())
         })?;
-        s.equals(&outputs[0].shape[axis], self.n.to_dim())
+        s.equals(&outputs[0].shape[axis], n.to_dim())
     }
 
     fn wire(
