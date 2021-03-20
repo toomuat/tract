@@ -32,6 +32,20 @@ impl Expansion for Resize {
     ) -> InferenceResult {
         check_input_arity(&inputs, 2)?;
         check_input_arity(&outputs, 1)?;
+        s.equals(&inputs[0].datum_type, &outputs[0].datum_type)?;
+        s.equals(&inputs[0].rank, 4)?;
+        s.equals(&inputs[1].rank, 1)?;
+        s.equals(&inputs[1].shape[0], 2.to_dim())?;
+        s.equals(&outputs[0].rank, 4)?;
+        s.given(&inputs[1].value, move |s, shape| {
+            let shape = shape.cast_to::<TDim>()?;
+            let shape = shape.as_slice::<TDim>()?;
+            s.equals(&outputs[0].shape[1], &shape[0])?;
+            s.equals(&outputs[0].shape[2], &shape[1])?;
+            Ok(())
+        })?;
+        s.equals(&outputs[0].shape[0], &inputs[0].shape[0])?;
+        s.equals(&outputs[0].shape[3], &inputs[0].shape[3])?;
         Ok(())
     }
 
