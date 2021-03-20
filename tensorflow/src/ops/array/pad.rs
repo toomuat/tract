@@ -1,76 +1,24 @@
-use tract_hir::internal::*;
-use tract_ndarray::{Array, ArrayView2};
+use crate::tfpb::tensorflow::NodeDef;
+use tract_hir::{internal::*, tract_core::itertools::Itertools};
 
 use crate::model::ParsingContext;
-use crate::tfpb::tensorflow::NodeDef;
 
-#[derive(Debug, Clone, Default, new, Hash)]
+#[derive(Debug, Clone, Default, Hash)]
 pub struct Pad;
 
 impl_dyn_hash!(Pad);
 
 pub fn pad(_ctx: &ParsingContext, _pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    Ok(Box::new(Pad))
+    Ok(expand(Pad))
 }
 
-impl Pad {
-    fn compute_t<T: Datum + Default + Copy>(
-        input: &Tensor,
-        paddings: ArrayView2<i32>,
-        stream_dim: Option<usize>,
-    ) -> TractResult<Arc<Tensor>> {
-        let shape: Vec<usize> = input
-            .shape()
-            .iter()
-            .enumerate()
-            .map(|(ix, &dim)| {
-                if Some(ix) != stream_dim {
-                    dim + (paddings[(ix, 0)] + paddings[(ix, 1)]) as usize
-                } else {
-                    dim
-                }
-            })
-            .collect();
-        let mut index_in_input = vec![0; input.rank()];
-        let input = input.to_array_view::<T>()?;
-        let result = Array::from_shape_fn(shape, |index| {
-            for i in 0..input.ndim() {
-                if index[i] < paddings[(i, 0)] as usize
-                    || index[i] - paddings[(i, 0)] as usize >= input.shape()[i] as usize
-                {
-                    return T::default();
-                } else {
-                    index_in_input[i] = index[i] - paddings[(i, 0)] as usize;
-                };
-            }
-            input[&*index_in_input]
-        });
-        Ok(result.into_arc_tensor())
-    }
-}
-
-impl Op for Pad {
+impl Expansion for Pad {
     fn name(&self) -> Cow<str> {
         "Pad".into()
     }
 
     op_tf!();
-    not_a_typed_op!();
-}
 
-impl EvalOp for Pad {
-    fn is_stateless(&self) -> bool {
-        true
-    }
-
-    fn eval(&self, mut inputs: TVec<Arc<Tensor>>) -> TractResult<TVec<Arc<Tensor>>> {
-        let (input, paddings) = args_2!(inputs);
-        let paddings = paddings.to_array_view::<i32>()?.into_dimensionality()?;
-        Ok(tvec![dispatch_copy!(Self::compute_t(input.datum_type())(&input, paddings, None))?])
-    }
-}
-
-impl InferenceRulesOp for Pad {
     fn rules<'r, 'p: 'r, 's: 'r>(
         &'s self,
         s: &mut Solver<'r>,
@@ -83,7 +31,6 @@ impl InferenceRulesOp for Pad {
         check_input_arity(&inputs, 2)?;
         check_output_arity(&outputs, 1)?;
         s.equals(&output.datum_type, &input.datum_type)?;
-        s.equals(&padding.datum_type, DatumType::TDim)?;
         s.equals(&input.rank, &output.rank)?;
         s.equals(&padding.rank, 2)?;
         s.equals(&padding.shape[0], input.rank.bex().to_dim())?;
@@ -101,7 +48,24 @@ impl InferenceRulesOp for Pad {
         })
     }
 
-    as_op!();
+    fn wire(
+        &self,
+        prefix: &str,
+        model: &mut TypedModel,
+        inputs: &[OutletId],
+    ) -> TractResult<TVec<OutletId>> {
+        let pads =
+            model.outlet_fact(inputs[1])?.konst.as_ref().context("Expect pads to be constant")?;
+        let pads = pads.cast_to::<u32>()?;
+        let pads = pads.as_slice::<u32>()?;
+        let op = tract_core::ops::array::Pad::new(
+            (0..pads.len() / 2).map(|d| (pads[2 * d] as usize, pads[2 * d + 1] as usize)).collect(),
+            tract_core::ops::array::PadMode::Constant(
+                Tensor::zero_scalar_dt(model.outlet_fact(inputs[0])?.datum_type)?.into_arc_tensor(),
+            ),
+        );
+        model.wire_node(prefix, op, &[inputs[0]])
+    }
 }
 
 #[cfg(test)]
@@ -119,6 +83,6 @@ mod tests {
             [0, 0, 0, 0, 0, 0, 0],
         ]));
 
-        assert_eq!(Pad::new().eval(inputs).unwrap(), expected);
+        assert_eq!(expand(Pad).eval(inputs).unwrap(), expected);
     }
 }
