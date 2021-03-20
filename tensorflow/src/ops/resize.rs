@@ -56,6 +56,11 @@ impl Expansion for Resize {
         use tract_core::ops::array::ConcatSlice::*;
         use tract_core::ops::array::TypedConcat;
         let shape = model.wire_node(
+            format!("{}.to_dim", prefix),
+            tract_core::ops::cast::cast(TDim::datum_type()),
+            &[inputs[1]],
+        )?;
+        let shape = model.wire_node(
             format!("{}.shape", prefix),
             TypedConcat::new(
                 0,
@@ -65,7 +70,7 @@ impl Expansion for Resize {
                     Const(rctensor1(&[input_fact.shape[3].clone()])),
                 ],
             ),
-            &[inputs[1]],
+            &shape,
         )?[0];
         model.wire_node(prefix, op, &[inputs[0], shape])
     }
