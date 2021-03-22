@@ -247,6 +247,7 @@ fn convert_output(
         DataType::Int8 => convert!(i8),
         DataType::Int32 => convert!(i32),
         DataType::Int64 => convert!(i64),
+        DataType::String => convert!(String),
         t => bail!("Missing conversion for tensorflow to tract (type: {:?})", t),
     };
 

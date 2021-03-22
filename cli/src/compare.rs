@@ -91,6 +91,7 @@ pub fn handle_tensorflow(
     let mut all_values: HashMap<String, CliResult<Arc<Tensor>>> = HashMap::new();
     if resilient {
         for name in wanted_outputs {
+            dbg!("Computed {} in TF", name);
             all_values.insert(
                 name.to_string(),
                 tf.run(pairs.clone(), &name)
@@ -100,7 +101,9 @@ pub fn handle_tensorflow(
         }
     } else {
         tf.run_get_many(pairs, wanted_outputs)?.into_iter().for_each(|(k, v)| {
-            all_values.insert(k.to_string(), Ok(v[0].clone().into()));
+            if v.len() > 0 {
+                all_values.insert(k.to_string(), Ok(v[0].clone().into()));
+            }
         });
     };
 
