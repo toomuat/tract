@@ -387,6 +387,25 @@ fn scale_2() {
 }
 
 #[test]
+fn scale_3() {
+    let mut qp = MatMulQParams::noop_static(i8::datum_type());
+    qp.b_scale = AttrOrInput::Attr(rctensor0(0.5f32));
+    QConvProblem {
+        shape_in: HWC.from_n_c_hw(1, 1, &[1]).unwrap(),
+        shape_out: HWC.from_n_c_hw(1, 1, &[1]).unwrap(),
+        kernel_format: OIHW,
+        group: 1,
+        data: arr2(&[[-11]]).into_dyn(),
+        kernel: arr3(&[[[1]]]).into_dyn(),
+        bias: None,
+        qp,
+        optim: true,
+    }
+    .check()
+    .unwrap();
+}
+
+#[test]
 fn group_0() {
     QConvProblem {
         shape_in: HWC.from_n_c_hw(1, 2, &[1]).unwrap(),
