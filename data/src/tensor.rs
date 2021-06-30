@@ -50,6 +50,7 @@ impl Hash for Tensor {
                 F16 => self.as_slice_unchecked::<i16>().hash(state),
                 F32 => self.as_slice_unchecked::<i32>().hash(state),
                 F64 => self.as_slice_unchecked::<i64>().hash(state),
+                C32 => self.as_slice_unchecked::<i64>().hash(state), // not a bug: C32 *is* 64bit long
                 TDim => self.as_slice_unchecked::<crate::dim::TDim>().hash(state),
                 String => self.as_slice_unchecked::<std::string::String>().hash(state),
                 Blob => self.as_slice_unchecked::<crate::datum::Blob>().hash(state),
@@ -183,6 +184,7 @@ impl Tensor {
                 DatumType::I16 => i16::stack_tensors(axis, &tensors),
                 DatumType::I32 => i32::stack_tensors(axis, &tensors),
                 DatumType::I64 => i64::stack_tensors(axis, &tensors),
+                DatumType::C32 => i64::stack_tensors(axis, &tensors),
                 DatumType::TDim => TDim::stack_tensors(axis, &tensors),
                 DatumType::Blob => Blob::stack_tensors(axis, &tensors),
                 DatumType::String => String::stack_tensors(axis, &tensors),

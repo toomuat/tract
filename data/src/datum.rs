@@ -1,6 +1,6 @@
-//! `Tensor` is the main data container for tract
 use crate::dim::TDim;
 use crate::f16::f16;
+use crate::prelude::c32;
 use crate::tensor::litteral::*;
 use crate::tensor::Tensor;
 use crate::TVec;
@@ -92,6 +92,7 @@ pub enum DatumType {
     F16,
     F32,
     F64,
+    C32,
     TDim,
     Blob,
     String,
@@ -358,6 +359,7 @@ datum!(u8, U8);
 datum!(u16, U16);
 datum!(u32, U32);
 datum!(u64, U64);
+datum!(c32, C32);
 datum!(TDim, TDim);
 datum!(String, String);
 datum!(Blob, Blob);

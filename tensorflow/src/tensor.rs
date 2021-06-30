@@ -22,6 +22,7 @@ impl TryFrom<DataType> for DatumType {
             DataType::DtHalf => Ok(DatumType::F16),
             DataType::DtFloat => Ok(DatumType::F32),
             DataType::DtDouble => Ok(DatumType::F64),
+            DataType::DtComplex64 => Ok(DatumType::C32),
             DataType::DtString => Ok(DatumType::Blob),
             _ => Err(format_err!("Unknown DatumType {:?}", t))?,
         }
@@ -61,6 +62,7 @@ impl TryFrom<DatumType> for DataType {
             DatumType::F16 => Ok(DataType::DtHalf),
             DatumType::F32 => Ok(DataType::DtFloat),
             DatumType::F64 => Ok(DataType::DtDouble),
+            DatumType::C32 => Ok(DataType::DtComplex64), // TF is whole size, tract is item size
             DatumType::Blob => Ok(DataType::DtString),
             DatumType::String => Ok(DataType::DtString),
             DatumType::QI8(_) => Ok(DataType::DtQint8),

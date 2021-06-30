@@ -21,6 +21,7 @@ macro_rules! tvec {
 #[macro_export]
 macro_rules! dispatch_datum {
     ($($path:ident)::* ($dt:expr) ($($args:expr),*)) => { {
+        use $crate::prelude::c32;
         use $crate::prelude::DatumType;
         match $dt {
             DatumType::Bool => $($path)::*::<bool>($($args),*),
@@ -35,6 +36,7 @@ macro_rules! dispatch_datum {
             DatumType::F16  => $($path)::*::<f16>($($args),*),
             DatumType::F32  => $($path)::*::<f32>($($args),*),
             DatumType::F64  => $($path)::*::<f64>($($args),*),
+            DatumType::C32  => $($path)::*::<c32>($($args),*),
             DatumType::Blob => $($path)::*::<Blob>($($args),*),
             DatumType::TDim => $($path)::*::<TDim>($($args),*),
             DatumType::String => $($path)::*::<String>($($args),*),
@@ -61,6 +63,7 @@ macro_rules! dispatch_datum_by_size {
             DatumType::F16  => $($path)::*::<i16>($($args),*),
             DatumType::F32  => $($path)::*::<i32>($($args),*),
             DatumType::F64  => $($path)::*::<i64>($($args),*),
+            DatumType::C32  => $($path)::*::<i64>($($args),*),
             DatumType::Blob => $($path)::*::<Blob>($($args),*),
             DatumType::TDim => $($path)::*::<TDim>($($args),*),
             DatumType::String => $($path)::*::<String>($($args),*),
@@ -73,6 +76,7 @@ macro_rules! dispatch_datum_by_size {
 #[macro_export]
 macro_rules! dispatch_copy {
     ($($path:ident)::* ($dt:expr) ($($args:expr),*)) => { {
+        use $crate::prelude::c32;
         use $crate::prelude::DatumType;
         match $dt {
             DatumType::Bool => $($path)::*::<bool>($($args),*),
@@ -87,6 +91,7 @@ macro_rules! dispatch_copy {
             DatumType::F16  => $($path)::*::<f16>($($args),*),
             DatumType::F32  => $($path)::*::<f32>($($args),*),
             DatumType::F64  => $($path)::*::<f64>($($args),*),
+            DatumType::C32  => $($path)::*::<c32>($($args),*),
             DatumType::QI8(_)  => $($path)::*::<i8>($($args),*),
             DatumType::QU8(_)  => $($path)::*::<u8>($($args),*),
             _ => panic!("{:?} is not Copy", $dt)
@@ -97,6 +102,7 @@ macro_rules! dispatch_copy {
 #[macro_export]
 macro_rules! dispatch_copy_by_size {
     ($($path:ident)::* ($dt:expr) ($($args:expr),*)) => { {
+        use $crate::prelude::c32;
         use $crate::prelude::DatumType;
         match $dt {
             DatumType::Bool => $($path)::*::<i8>($($args),*),
@@ -111,6 +117,7 @@ macro_rules! dispatch_copy_by_size {
             DatumType::F16  => $($path)::*::<i16>($($args),*),
             DatumType::F32  => $($path)::*::<i32>($($args),*),
             DatumType::F64  => $($path)::*::<i64>($($args),*),
+            DatumType::C32  => $($path)::*::<c32>($($args),*),
             DatumType::QI8(_)  => $($path)::*::<i8>($($args),*),
             DatumType::QU8(_)  => $($path)::*::<u8>($($args),*),
             _ => panic!("{:?} is not Copy", $dt)

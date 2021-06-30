@@ -25,6 +25,7 @@ pub mod prelude {
         dispatch_floatlike, dispatch_hash, dispatch_numbers, dispatch_signed,
     };
     pub use itertools as tract_itertools;
+    pub use num_complex::Complex32 as c32;
 }
 
 pub mod internal {
