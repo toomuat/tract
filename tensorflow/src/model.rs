@@ -123,6 +123,7 @@ impl Tensorflow {
         let mut context = ParsingContext::default();
         let mut control_inputs = vec![];
 
+        trace!("Parsing ProtoModel");
         // compute min output arity for all nodes
         for pbnode in &graph.node {
             for i in &pbnode.input {
@@ -131,6 +132,7 @@ impl Tensorflow {
                 *arity = (*arity).max(slot + 1);
             }
         }
+        trace!("Done arity map");
 
         for pbnode in &graph.node {
             let name = &pbnode.name;
@@ -145,7 +147,9 @@ impl Tensorflow {
             }
 
             let op = match self.op_register.0.get(&pbnode.op) {
-                Some(builder) => (builder)(&context, pbnode)?,
+                Some(builder) => (builder)(&context, pbnode).with_context(|| {
+                    format!("Constructing op {} for node \"{}\"", pbnode.op, pbnode.name)
+                })?,
                 None => tract_hir::ops::unimpl::UnimplementedOp::new(
                     context.node_output_arities.get(name).cloned().unwrap_or(1),
                     &pbnode.op,
@@ -181,6 +185,7 @@ impl Tensorflow {
                 model.set_outlet_fact(OutletId::new(node_id, 0), fact)?;
             }
         }
+        trace!("Done building nodes");
 
         for pbnode in &graph.node {
             let node_id = if pbnode.op == "NextIteration" {

@@ -6,8 +6,8 @@ use super::philox::Philox4x32x10;
 
 pub fn random_uniform(_ctx: &ParsingContext, node: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
     let dtype = node.get_attr_datum_type("dtype")?;
-    let seed: u64 = node.get_attr_int("seed")?;
-    let seed2: u64 = node.get_attr_int("seed2")?;
+    let seed: u64 = node.get_attr_opt_int("seed")?.unwrap_or(0);
+    let seed2: u64 = node.get_attr_opt_int("seed2")?.unwrap_or(0);
     Ok(Box::new(RandomUniform::new(dtype, seed, seed2)))
 }
 

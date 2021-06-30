@@ -4,17 +4,12 @@ use crate::model::ParsingContext;
 use crate::tfpb::tensorflow::NodeDef;
 
 #[derive(Debug, Clone, new, Hash)]
-pub struct Transpose {
-    t: DatumType,
-    t_perm: DatumType,
-}
+pub struct Transpose;
 
 impl_dyn_hash!(Transpose);
 
-pub fn transpose(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    let t = pb.get_attr_datum_type("T")?;
-    let t_perm = pb.get_attr_datum_type("Tperm")?;
-    Ok(expand(Transpose::new(t, t_perm)))
+pub fn transpose(_ctx: &ParsingContext, _pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
+    Ok(expand(Transpose))
 }
 
 impl Transpose {
@@ -42,8 +37,6 @@ impl Expansion for Transpose {
     ) -> InferenceResult {
         check_output_arity(&inputs, 2)?;
         check_output_arity(&outputs, 1)?;
-        s.equals(&inputs[0].datum_type, self.t)?;
-        s.equals(&inputs[1].datum_type, self.t_perm)?;
         s.equals(&outputs[0].datum_type, &inputs[0].datum_type)?;
         s.equals(&outputs[0].rank, &inputs[0].rank)?;
         s.equals(&inputs[1].rank, 1)?;

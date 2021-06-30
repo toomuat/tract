@@ -103,6 +103,7 @@ impl<'a> TryFrom<&'a TensorProto> for Tensor {
                 DataType::DtInt64 => tensor_from_repeated_field(&*dims, t.int64_val.to_vec())?,
                 DataType::DtFloat => tensor_from_repeated_field(&*dims, t.float_val.to_vec())?,
                 DataType::DtDouble => tensor_from_repeated_field(&*dims, t.double_val.to_vec())?,
+                DataType::DtBool => tensor_from_repeated_field(&*dims, t.bool_val.to_vec())?,
                 DataType::DtString => {
                     let strings =
                         t.string_val.iter().map(|s| Blob(s.to_owned())).collect::<Vec<Blob>>();

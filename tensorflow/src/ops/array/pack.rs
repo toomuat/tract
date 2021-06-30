@@ -6,7 +6,7 @@ use crate::tfpb::tensorflow::NodeDef;
 pub fn pack(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
     let dtype = pb.get_attr_datum_type("T")?;
     let n = pb.input.len();
-    let axis = pb.get_attr_int("axis")?;
+    let axis = pb.get_attr_opt_int("axis")?.unwrap_or(0);
 
     Ok(expand(Pack::new(dtype, n, axis)))
 }

@@ -7,7 +7,6 @@ use crate::tfpb::tensorflow::NodeDef;
 #[derive(Debug, Clone, new, Hash)]
 pub struct Reduce {
     t: DatumType,
-    t_idx: DatumType,
     keep_dims: bool,
     reducer: nn::Reducer,
 }
@@ -36,9 +35,8 @@ pub fn sum(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn Inference
 
 pub fn reduce(pb: &NodeDef, op: nn::Reducer) -> TractResult<Box<dyn InferenceOp>> {
     let t = pb.get_attr_datum_type("T")?;
-    let t_idx = pb.get_attr_datum_type("Tidx")?;
-    let keep_dims = pb.get_attr_bool("keep_dims")?;
-    Ok(Box::new(Reduce::new(t, t_idx, keep_dims, op)))
+    let keep_dims = pb.get_attr_opt_bool("keep_dims")?.unwrap_or(false);
+    Ok(Box::new(Reduce::new(t, keep_dims, op)))
 }
 
 impl Op for Reduce {

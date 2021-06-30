@@ -6,15 +6,12 @@ use tract_ndarray::prelude::*;
 use tract_num_traits::AsPrimitive;
 
 #[derive(Debug, Clone, new, Hash)]
-pub struct Range {
-    dtype: DatumType,
-}
+pub struct Range;
 
 impl_dyn_hash!(Range);
 
-pub fn range(_ctx: &ParsingContext, pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    let dtype = pb.get_attr_datum_type("Tidx")?;
-    Ok(Box::new(Range::new(dtype)))
+pub fn range(_ctx: &ParsingContext, _pb: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
+    Ok(Box::new(Range))
 }
 
 impl Range {
@@ -53,7 +50,7 @@ impl EvalOp for Range {
     }
 
     fn eval(&self, inputs: TVec<Arc<Tensor>>) -> TractResult<TVec<Arc<Tensor>>> {
-        dispatch_numbers!(Self::eval_t(self.dtype)(self, inputs))
+        dispatch_numbers!(Self::eval_t(inputs[0].datum_type())(self, inputs))
     }
 }
 
@@ -66,10 +63,9 @@ impl InferenceRulesOp for Range {
     ) -> InferenceResult {
         check_input_arity(&inputs, 3)?;
         check_output_arity(&outputs, 1)?;
-        s.equals(&inputs[0].datum_type, self.dtype)?;
-        s.equals(&inputs[1].datum_type, self.dtype)?;
-        s.equals(&inputs[2].datum_type, self.dtype)?;
-        s.equals(&outputs[0].datum_type, self.dtype)?;
+        s.equals(&inputs[0].datum_type, &inputs[1].datum_type)?;
+        s.equals(&inputs[0].datum_type, &inputs[2].datum_type)?;
+        s.equals(&inputs[0].datum_type, &outputs[0].datum_type)?;
         s.equals(&inputs[0].rank, 0)?;
         s.equals(&inputs[1].rank, 0)?;
         s.equals(&inputs[2].rank, 0)?;

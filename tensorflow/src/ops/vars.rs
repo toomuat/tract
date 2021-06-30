@@ -9,10 +9,10 @@ pub fn register_all_ops(reg: &mut TfOpRegister) {
 }
 
 fn variable_v2(_ctx: &ParsingContext, node: &NodeDef) -> TractResult<Box<dyn InferenceOp>> {
-    let shared_name = node.get_attr_str("shared_name")?;
-    let shared_name = if shared_name != "" { Some(shared_name) } else { None };
-    let container = node.get_attr_str("container")?;
-    let container = if container != "" { Some(container) } else { None };
+    let shared_name = node.get_attr_opt_str("shared_name")?;
+    let shared_name = shared_name.filter(|s| s.len() > 0);
+    let container = node.get_attr_opt_str("container")?;
+    let container = container.filter(|s| s.len() > 0);
     let name = node.name.to_string();
     let id = format!("{:?}#{:?}#{}", container, shared_name, name);
     let shape = node.get_attr_shape("shape")?;
