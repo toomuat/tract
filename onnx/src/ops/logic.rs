@@ -32,7 +32,7 @@ pub fn _if(
         ctx.parse_graph(graph_then)?;
     let ParseResult { model: mut else_body, unresolved_inputs: unresolved_inputs_else, .. } =
         ctx.parse_graph(graph_else)?;
-    let unresolved_inputs = unresolved_inputs_then
+    let unresolved_inputs: Vec<String> = unresolved_inputs_then
         .iter()
         .chain(unresolved_inputs_else.iter())
         .sorted()
@@ -53,9 +53,83 @@ pub fn _if(
     ))
 }
 
+#[derive(Debug, Clone, new, Hash)]
 struct If {
     then_body: InferenceModel,
     then_input_mapping: Vec<usize>,
     else_body: InferenceModel,
     else_input_mapping: Vec<usize>,
+}
+
+impl_dyn_hash!(If);
+
+impl Op for If {
+    fn name(&self) -> Cow<str> {
+        "If".into()
+    }
+
+    op_onnx!();
+    not_a_typed_op!();
+}
+
+impl EvalOp for If {
+    fn is_stateless(&self) -> bool {
+        true
+    }
+
+    fn eval(&self, inputs: TVec<Arc<Tensor>>) -> TractResult<TVec<Arc<Tensor>>> {
+        let cond = inputs[0].cast_to_scalar::<bool>()?;
+        let (input_mapping, body) = if cond {
+            (&self.then_input_mapping, &self.then_body)
+        } else {
+            (&self.else_input_mapping, &self.else_body)
+        };
+        let inputs: TVec<Tensor> =
+            input_mapping.iter().map(|&ix| inputs[ix].clone().into_tensor()).collect();
+        body.clone().into_runnable()?.run(inputs)
+    }
+}
+
+impl InferenceOp for If {
+    fn infer_facts(
+        &mut self,
+        inputs: TVec<&InferenceFact>,
+        outputs: TVec<&InferenceFact>,
+        observed: TVec<&InferenceFact>,
+    ) -> TractResult<(TVec<InferenceFact>, TVec<InferenceFact>, TVec<InferenceFact>)> {
+        let mut inputs: TVec<InferenceFact> = inputs.into_iter().cloned().collect();
+        let mut outputs: TVec<InferenceFact> = outputs.into_iter().cloned().collect();
+        loop {
+            let mut changed = false;
+            for ix in 0..outputs.len() {
+                changed = changed
+                    || Factoid::unify_all(&mut [
+                        &mut outputs[ix],
+                        self.then_body.output_fact_mut(ix)?,
+                        self.else_body.output_fact_mut(ix)?,
+                    ])?;
+            }
+            for (body_ix, outer_ix) in self.then_input_mapping.iter().enumerate() {
+                changed = changed
+                    || self
+                        .then_body
+                        .input_fact_mut(body_ix)?
+                        .unify_with_mut(&mut inputs[*outer_ix])?;
+            }
+            for (body_ix, outer_ix) in self.else_input_mapping.iter().enumerate() {
+                changed = changed
+                    || self
+                        .else_body
+                        .input_fact_mut(body_ix)?
+                        .unify_with_mut(&mut inputs[*outer_ix])?;
+            }
+            changed = changed || self.then_body.analyse(false)?;
+            changed = changed || self.else_body.analyse(false)?;
+            if !changed {
+                return Ok((inputs, outputs, observed.into_iter().cloned().collect()));
+            }
+        }
+    }
+
+    as_op!();
 }
