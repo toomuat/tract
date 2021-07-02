@@ -21,6 +21,7 @@ impl TryFrom<DataType> for DatumType {
             DataType::Float => Ok(DatumType::F32),
             DataType::Double => Ok(DatumType::F64),
             DataType::String => Ok(DatumType::String),
+            DataType::Complex64 => Ok(DatumType::C32),
             _ => bail!("Unknown DatumType {:?}", t),
         }
     }
@@ -77,6 +78,7 @@ impl<'a> TryFrom<&'a TensorProto> for Tensor {
                     DatumType::F16 => Tensor::from_raw::<f16>(&*shape, &*t.raw_data),
                     DatumType::F32 => Tensor::from_raw::<f32>(&*shape, &*t.raw_data),
                     DatumType::F64 => Tensor::from_raw::<f64>(&*shape, &*t.raw_data),
+                    DatumType::C32 => Tensor::from_raw::<c32>(&*shape, &*t.raw_data),
                     DatumType::Bool => Ok(Tensor::from_raw::<u8>(&*shape, &*t.raw_data)?
                         .into_array::<u8>()?
                         .mapv(|x| x != 0)

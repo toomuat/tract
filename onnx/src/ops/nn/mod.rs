@@ -130,8 +130,10 @@ fn common_conv(node: &NodeProto) -> TractResult<cnn::Conv> {
     if let Some(kernel_shape) = node.get_attr_opt_tvec("kernel_shape")? {
         op = op.kernel_shape(kernel_shape);
     }
-    if let Some(group) = node.get_attr_opt("group")? {
-        op = op.group(group);
+    if let Some(group) = node.get_attr_opt::<isize>("group")? {
+        if group >= 0 {
+            op = op.group(group as usize);
+        }
     }
     if let Some(v) = dilations(node)? {
         op = op.dilations(v);
