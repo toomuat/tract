@@ -74,6 +74,7 @@ impl From<Tensor> for TensorHolder {
             DatumType::U16 => TensorHolder::U16(Self::to_tensor(m.into_array().unwrap())),
             DatumType::U32 => TensorHolder::U16(Self::to_tensor(m.into_array().unwrap())),
             DatumType::U64 => TensorHolder::U16(Self::to_tensor(m.into_array().unwrap())),
+            DatumType::C32 => unimplemented!(),
             DatumType::QU8(_) => TensorHolder::U8(Self::to_tensor(m.into_array().unwrap())),
             DatumType::QI8(_) => TensorHolder::I8(Self::to_tensor(m.into_array().unwrap())),
             DatumType::TDim => {
