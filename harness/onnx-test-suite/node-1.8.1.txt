@@ -227,7 +227,7 @@ test_hardsigmoid
 test_hardsigmoid_default
 test_hardsigmoid_example
 test_identity
-test_if not-nnef not-typable
+test_if input:
 test_instancenorm_example
 test_isinf
 test_isinf_negative

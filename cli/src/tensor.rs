@@ -290,7 +290,10 @@ pub fn retrieve_or_make_inputs(
             tmp.push(vec![crate::tensor::tensor_for_fact(&fact, None)?]);
         }
     }
-    Ok((0..tmp[0].len()).map(|turn| tmp.iter().map(|t| t[turn].clone()).collect()).collect())
+    let len = tmp.get(0).map(|v| v.len()).unwrap_or(0);
+    Ok((0..len)
+        .map(|turn| tmp.iter().map(|t| t[turn].clone()).collect())
+        .collect())
 }
 
 pub fn make_inputs(values: &[impl std::borrow::Borrow<TypedFact>]) -> CliResult<TVec<Tensor>> {
