@@ -28,9 +28,9 @@ pub fn _if(
 ) -> TractResult<(Box<dyn InferenceOp>, Vec<String>)> {
     let graph_then = node.get_attr("then_branch")?;
     let graph_else = node.get_attr("else_branch")?;
-    let ParseResult { model: mut then_body, unresolved_inputs: unresolved_inputs_then, .. } =
+    let ParseResult { model: then_body, unresolved_inputs: unresolved_inputs_then, .. } =
         ctx.parse_graph(graph_then)?;
-    let ParseResult { model: mut else_body, unresolved_inputs: unresolved_inputs_else, .. } =
+    let ParseResult { model: else_body, unresolved_inputs: unresolved_inputs_else, .. } =
         ctx.parse_graph(graph_else)?;
     let unresolved_inputs: Vec<String> = unresolved_inputs_then
         .iter()
@@ -101,14 +101,8 @@ impl InferenceOp for If {
         let mut outputs: TVec<InferenceFact> = outputs.into_iter().cloned().collect();
         loop {
             let mut changed = false;
-            for ix in 0..outputs.len() {
-                changed = changed
-                    || Factoid::unify_all(&mut [
-                        &mut outputs[ix],
-                        self.then_body.output_fact_mut(ix)?,
-                        self.else_body.output_fact_mut(ix)?,
-                    ])?;
-            }
+            changed = changed || inputs[0].datum_type.unify_with(&bool::datum_type().into())?;
+            changed = changed || inputs[0].shape.unify_with(&(vec![0usize; 0]).into())?;
             for (body_ix, outer_ix) in self.then_input_mapping.iter().enumerate() {
                 changed = changed
                     || self
@@ -123,12 +117,60 @@ impl InferenceOp for If {
                         .input_fact_mut(body_ix)?
                         .unify_with_mut(&mut inputs[*outer_ix])?;
             }
+            if let Some(a) = inputs[0].value.concretize() {
+                let a = a.cast_to_scalar()?;
+                let (body, mapping) = if a {
+                    (&mut self.then_body, &self.then_input_mapping)
+                } else {
+                    (&mut self.else_body, &self.else_input_mapping)
+                };
+                for (oix, mapping) in mapping.iter().enumerate() {
+                    changed = changed
+                        || body.output_fact_mut(oix)?.unify_with_mut(&mut outputs[*mapping])?;
+                }
+            }
             changed = changed || self.then_body.analyse(false)?;
             changed = changed || self.else_body.analyse(false)?;
             if !changed {
                 return Ok((inputs, outputs, observed.into_iter().cloned().collect()));
             }
         }
+    }
+
+    fn to_typed(
+        &self,
+        _source: &InferenceModel,
+        node: &InferenceNode,
+        target: &mut TypedModel,
+        mapping: &HashMap<OutletId, OutletId>,
+    ) -> TractResult<TVec<OutletId>> {
+        if let Some(cond) = &target.outlet_fact(mapping[&node.inputs[0]])?.konst {
+            let cond = cond.cast_to_scalar::<bool>()?;
+            let (body, input_mapping) = if cond {
+                (&self.then_body, &self.then_input_mapping)
+            } else {
+                (&self.else_body, &self.else_input_mapping)
+            };
+            let mut inner_mapping: HashMap<OutletId, OutletId> = HashMap::default();
+            for (input_ix, outlet) in tract_itertools::izip!(input_mapping, body.input_outlets()?) {
+                inner_mapping.insert(*outlet, mapping[&node.inputs[*input_ix]]);
+            }
+            let body = body.clone().into_typed()?;
+            for node in body.eval_order()? {
+                if Graph::is_source(&body.node(node).op) {
+                    continue;
+                }
+                let node_inputs =
+                    body.node(node).inputs.iter().map(|o| inner_mapping[o]).collect::<TVec<_>>();
+                let node_outputs =
+                    target.wire_node(&body.node(node).name, &body.node(node).op, &node_inputs)?;
+                for (slot_ix, outlet) in node_outputs.iter().enumerate() {
+                    inner_mapping.insert((node, slot_ix).into(), *outlet);
+                }
+            }
+            return Ok(body.output_outlets()?.iter().map(|o| inner_mapping[o]).collect())
+        }
+        bail!("Can only deal with constant conditions in If translation")
     }
 
     as_op!();

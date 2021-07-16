@@ -97,37 +97,45 @@ pub fn run_one<P: AsRef<path::Path>>(
         if d.metadata().unwrap().is_dir()
             && d.file_name().to_str().unwrap().starts_with("test_data_set_")
         {
+            use tract_core::internal::TractErrorContext;
             let data_path = d.path();
             let mut inputs = load_half_dataset("input", &data_path);
             for setup in more {
                 if setup.starts_with("input:") {
-                    let input = setup.split(":").nth(1).unwrap();
-                    let mut actual_input = None;
+                    let tokens = setup.split(":").nth(1).unwrap();
+                    let mut resolved_values = tvec!();
+                    let mut resolved_outlets = tvec!();
+                    for input in tokens.split(",").filter(|s| !s.is_empty()) {
+                        let ix = model
+                            .input_outlets()?
+                            .iter()
+                            .position(|o| model.node(o.node).name == input)
+                            .with_context(|| {
+                                format!(
+                                    "specified input: {}, input names: {:?}",
+                                    setup,
+                                    model
+                                        .input_outlets()
+                                        .unwrap()
+                                        .iter()
+                                        .map(|n| &model.node(n.node).name)
+                                        .collect::<Vec<_>>()
+                                )
+                            })?;
+                        resolved_values.push(inputs[ix].clone());
+                        resolved_outlets.push(model.input_outlets()?[ix]);
+                    }
                     let input_outlets = model.input_outlets().unwrap().to_vec();
                     for (ix, outlet) in input_outlets.iter().enumerate() {
-                        if model.node(outlet.node).name == input {
-                            actual_input = Some((outlet, inputs[ix].clone()));
-                        } else {
+                        if !resolved_outlets.contains(outlet) {
                             model.node_mut(outlet.node).op =
                                 Box::new(tract_hir::ops::konst::Const::new(
                                     inputs[ix].clone().into_arc_tensor(),
                                 ));
                         }
                     }
-                    let (outlet, value) = actual_input.unwrap_or_else(|| {
-                        panic!(
-                            "specified input: {}, input names: {:?}",
-                            setup,
-                            model
-                                .input_outlets()
-                                .unwrap()
-                                .iter()
-                                .map(|n| &model.node(n.node).name)
-                                .collect::<Vec<_>>()
-                        )
-                    });
-                    model.set_input_outlets(&[*outlet]).unwrap();
-                    inputs = tvec!(value);
+                    model.set_input_outlets(&*resolved_outlets).unwrap();
+                    inputs = resolved_values;
                 }
             }
             info!("Analyse");
