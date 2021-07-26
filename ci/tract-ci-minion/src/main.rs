@@ -86,7 +86,7 @@ where
 }
 
 fn config_path() -> PathBuf {
-    std::env::var("TRACT_MINION_CONFIG").map(|s| PathBuf::from(s)).unwrap_or_else(|_| {
+    std::env::var("TRACT_CI_MINION_CONFIG").map(|s| PathBuf::from(s)).unwrap_or_else(|_| {
         dirs::home_dir().context("HOME does not exist").unwrap().join(".minion.toml")
     })
 }
@@ -264,7 +264,8 @@ fn main_loop() -> Result<()> {
 }
 
 fn main() {
-    env_logger::init_from_env("TRACT_MINION_LOG");
+    env_logger::init_from_env("TRACT_CI_MINION_LOG");
+    log::info!("Starting tract-ci-minion");
     if let Err(e) = main_loop() {
         eprintln!("{:?}", e);
         std::process::exit(1);
