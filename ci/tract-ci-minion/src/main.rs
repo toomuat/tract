@@ -1,7 +1,11 @@
+#[macro_use]
+extern crate clap;
+
 use anyhow::Context;
 use anyhow::Result;
 use flate2::read::GzEncoder;
 use fs2::FileExt;
+use log::LevelFilter;
 use s3::creds::Credentials;
 use s3::serde_types::Object;
 use s3::Bucket;
@@ -230,8 +234,7 @@ fn run(config: &Config) -> Result<bool> {
     Ok(done_anything)
 }
 
-fn main_loop() -> Result<()> {
-    let cf_path = config_path();
+fn main_loop(cf_path: &std::path::Path) -> Result<()> {
     log::info!("Reading config from {:?}", cf_path);
     let config = read_config(cf_path)?;
     log::debug!("{:?}", config);
@@ -264,10 +267,30 @@ fn main_loop() -> Result<()> {
 }
 
 fn main() {
-    env_logger::init_from_env("TRACT_CI_MINION_LOG");
-    log::info!("Starting tract-ci-minion");
-    if let Err(e) = main_loop() {
-        eprintln!("{:?}", e);
+    let matches = clap::clap_app!(tract_ci_minion =>
+     (version: "1.0")
+     (author: "Mathieu Poumeyrol mathieu.poumeyrol@sonos.com")
+     (about: "Runs tract benches on smallish devices")
+     (@arg verbose: -v --verbose ... "More verbose.")
+     (@arg config: -c --config +takes_value default_value(".minion.toml"))
+     (@arg no_log_prefix: --("no-log-prefix") "Short log (for systemd...)")
+    )
+    .get_matches();
+    let level = match matches.occurrences_of("verbose") {
+        0 => LevelFilter::Warn,
+        1 => LevelFilter::Info,
+        2 => LevelFilter::Debug,
+        _ => LevelFilter::Trace,
+    };
+    let mut builder = env_logger::Builder::from_env("TRACT_CI_MINION_LOG");
+    builder.filter_level(level);
+    if matches.is_present("no_log_prefix") {
+        builder.format(|buf, rec| writeln!(buf, "{}: {}", rec.level(), rec.args()));
+    }
+    builder.init();
+    let cf_path = matches.value_of("config").map(|s| s.into()).unwrap_or_else(|| config_path());
+    if let Err(e) = main_loop(&cf_path) {
+        log::error!("{:?}", e);
         std::process::exit(1);
     }
 }
