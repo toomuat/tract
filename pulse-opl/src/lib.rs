@@ -16,7 +16,7 @@ pub mod prelude {
 }
 
 pub mod ops {
-    pub use super::delay::Delay;
+    pub use super::delay::{ Delay, DelayState };
     pub use super::pad::PulsePad;
 }
 

@@ -27,8 +27,8 @@ fn de_delay(
 }
 
 #[derive(Debug, Clone)]
-struct DelayState {
-    buffer: Tensor,
+pub struct DelayState {
+    pub buffer: Tensor,
 }
 
 impl OpState for DelayState {
