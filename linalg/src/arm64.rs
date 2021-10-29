@@ -28,7 +28,7 @@ pub fn plug(ops: &mut Ops) {
                 &[
                     Box::new(MatMatMulImpl::<MatMatMulF32x12x8A53, f32>::new()),
                     Box::new(MatMatMulImpl::<MatMatMulF32x8x8A53, f32>::new()),
-                    Box::new(MatMatMulImpl::<MatMatMulF32x16x4A53, f32>::new()),
+//                    Box::new(MatMatMulImpl::<MatMatMulF32x16x4A53, f32>::new()),
                 ],
             )
         });
@@ -44,7 +44,7 @@ pub fn plug(ops: &mut Ops) {
                 &[
                     Box::new(MatMatMulImpl::<MatMatMulF32x12x8, f32>::new()),
                     Box::new(MatMatMulImpl::<MatMatMulF32x8x8, f32>::new()),
-                    Box::new(MatMatMulImpl::<MatMatMulF32x16x4, f32>::new()),
+//                    Box::new(MatMatMulImpl::<MatMatMulF32x16x4, f32>::new()),
                 ],
             )
         });
