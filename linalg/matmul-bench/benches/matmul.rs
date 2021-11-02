@@ -41,7 +41,7 @@ pub fn tract_unfair(crit: &mut BenchmarkGroup<WallTime>, m: usize, k: usize, n: 
     use tract_linalg::frame::mmm::FusedSpec;
     let a = Tensor::zero_dt(DatumType::F32, &[m, k]).unwrap();
     let b = Tensor::zero_dt(DatumType::F32, &[k, n]).unwrap();
-    let mut c = Tensor::zero_dt(DatumType::F32, &[n, m]).unwrap();
+    let mut c = Tensor::zero_dt(DatumType::F32, &[m, n]).unwrap();
 
     unsafe {
         crit.bench_function("tract_unfair", |be| {
@@ -50,7 +50,7 @@ pub fn tract_unfair(crit: &mut BenchmarkGroup<WallTime>, m: usize, k: usize, n: 
                 .unwrap();
             let a_storage = mmm.a_packed(f32::datum_type().size_of(), k);
             let b_storage = mmm.b_packed(f32::datum_type().size_of(), k);
-            let c_storage = mmm.c_view_with_axis(1, 0);
+            let c_storage = mmm.c_view();
 
             let mut pa = Tensor::zero_aligned_dt(
                 DatumType::F32,
