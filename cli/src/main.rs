@@ -260,7 +260,7 @@ fn main() -> tract_core::anyhow::Result<()> {
             Arg::with_name("assert-output-fact")
             .takes_value(true)
             .long("assert-output-fact")
-            .help("Infered shape and datum type must match exactly this"),
+            .help("Inferred shape and datum type must match exactly this"),
             )
         .arg(
             Arg::with_name("assert-op-count")
@@ -333,7 +333,7 @@ fn main() -> tract_core::anyhow::Result<()> {
             Arg::with_name("assert-output-fact")
                 .takes_value(true)
                 .long("assert-output-fact")
-                .help("Infered shape and datum type must match exactly this"),
+                .help("Inferred shape and datum type must match exactly this"),
         );
     app = app.subcommand(output_options(run));
 

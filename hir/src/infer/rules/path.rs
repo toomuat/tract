@@ -205,7 +205,7 @@ fn set_tensorfact_path(
                     let k = k.to_usize().unwrap();
                     fact.shape = fact.shape.unify(&ShapeFactoid::closed(tvec![dimfact!(_); k]))?;
                 } else {
-                    bail!("Infered a negative rank ({})", k)
+                    bail!("Inferred a negative rank ({})", k)
                 }
             }
 

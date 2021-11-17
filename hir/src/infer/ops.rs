@@ -36,12 +36,12 @@ pub trait InferenceOp:
         outputs: TVec<&InferenceFact>,
         observed: TVec<&InferenceFact>,
     ) -> TractResult<(TVec<InferenceFact>, TVec<InferenceFact>, TVec<InferenceFact>)> {
-        let (infered_inputs, infered_outputs, observed) =
+        let (inferred_inputs, inferred_outputs, observed) =
             self.infer_facts(inputs, outputs, observed).context("Infering facts")?;
 
         if self.is_stateless() {
-            if infered_inputs.iter().all(|i| i.value.is_concrete()) {
-                let input_values = infered_inputs
+            if inferred_inputs.iter().all(|i| i.value.is_concrete()) {
+                let input_values = inferred_inputs
                     .iter()
                     .map(|i| i.value.concretize().unwrap().clone().into())
                     .collect(); // checked
@@ -49,7 +49,7 @@ pub trait InferenceOp:
                     Ok(values) => {
                         let output_values =
                             values.into_iter().map(|t| t.into()).collect::<TVec<_>>();
-                        return Ok((infered_inputs, output_values, observed));
+                        return Ok((inferred_inputs, output_values, observed));
                     }
                     Err(e) if e.source().map(|e| e.downcast_ref::<UndeterminedSymbol>()).is_some() => (),
                     Err(e) => return Err(e).context("Eager eval"),
@@ -57,7 +57,7 @@ pub trait InferenceOp:
             }
         }
 
-        return Ok((infered_inputs, infered_outputs, observed));
+        return Ok((inferred_inputs, inferred_outputs, observed));
     }
 
     /// Allow an op to specify a supplementary list of outlets facts that
